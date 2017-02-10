@@ -16,7 +16,7 @@ It is a reusable un-opinionated interface that can be used with any existing PHP
 
 ## Demo Example(s)
 
-*  See the **[basic demo implementation](https://github.com/krisrandall/parcel4me-php-basedemo)**.     
+*  See the **[basic demo implementation](https://github.com/parcelforme/parcel4me-php-basedemo)**.     
 
 * See the ** **COMING SOON** ** : [list of p4m shopping cart implementations]().
 
