@@ -1,5 +1,5 @@
 {
-    "name": "krisrandall/parcel4me",
+    "name": "parcel4me/parcel4me",
     "description": "A one-click checkout and delivery package for PHP shopping carts",
     "require": {
         "firebase/php-jwt": "^4.0",
@@ -9,7 +9,7 @@
     "authors": [
         {
             "name": "krisrandall",
-            "email": "kris.randall@gmail.com"
+            "email": "kris@cocreations.com.au"
         }
     ],
     "autoload": {

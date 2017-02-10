@@ -12,7 +12,7 @@ It is a reusable un-opinionated interface that can be used with any existing PHP
 
 ### Add the package 
 
-    $ composer install parcelforme/parcel4me
+    $ composer install parcel4me/parcel4me
 
 ## Demo Example(s)
 
