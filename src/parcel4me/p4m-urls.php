@@ -2,47 +2,45 @@
 
 namespace P4M;
 
-require 'p4m-config.php';
+require 'settings.php';
 
 
 class P4M_Shop_Urls
 {
 
-    private static $endPoints = array(
-
-
-            // OAuth2 (aka. Open Id Connect) (aka. Id Server) endpoints
-
-            'oauth2_base_url'           => P4M_OID_SERVER,
-            'signup'                    => P4M_OID_SERVER . '/ui/signup',
-            'connect_token'             => P4M_OID_SERVER . '/connect/token',
-            'authorize'                 => P4M_OID_SERVER . '/connect/authorize',
-            'logout'                    => P4M_OID_SERVER . '/connect/endsession',
-            'jwks'                      => P4M_OID_SERVER . '/.well-known/openid-configuration/jwks',
-
-
-            // Parcel 4 Me API endpoints
-
-            'registerConsumer'          => P4M_API_SERVER . '/registerConsumer',
-            'consumer'                  => P4M_API_SERVER . '/consumer',
-            'consumerExtras'            => P4M_API_SERVER . '/consumerExtras',
-            'restoreLastCart'           => P4M_API_SERVER . '/restoreLastCart',
-            'paypalSetup'               => P4M_API_SERVER . '/paypalSetup',
-            'cart'                      => P4M_API_SERVER . '/cart',
-            'purchase'                  => P4M_API_SERVER . '/purchase',
-
-
-            // Global Freight Solutions (GFS) endpoints
-            
-            'gfs_connect_token'         => GFS_SERVER . '/connect/token'
-
-
-    );
-
 
     public static function endPoint($endPointStr, $urlParams = '') {
 
-        $ep = self::$endPoints[$endPointStr];
+
+        $endPoints = array();
+
+        // OAuth2 (aka. Open Id Connect) (aka. Id Server) endpoints
+
+        $p4m_oid_server = Settings::getPublic('Server:P4M_OID_SERVER');
+        $endPoints['oauth2_base_url']           = $p4m_oid_server;
+        $endPoints['signup']                    = $p4m_oid_server . '/ui/signup';
+        $endPoints['connect_token']             = $p4m_oid_server . '/connect/token';
+        $endPoints['authorize']                 = $p4m_oid_server . '/connect/authorize';
+        $endPoints['logout']                    = $p4m_oid_server . '/connect/endsession';
+        $endPoints['jwks']                      = $p4m_oid_server . '/.well-known/openid-configuration/jwks';
+
+        // Parcel 4 Me API endpoints
+
+        $p4m_api_server = Settings::getPublic('Server:P4M_API_SERVER');
+        $endPoints['registerConsumer']          = $p4m_api_server . '/registerConsumer';
+        $endPoints['consumer']                  = $p4m_api_server . '/consumer';
+        $endPoints['consumerExtras']            = $p4m_api_server . '/consumerExtras';
+        $endPoints['restoreLastCart']           = $p4m_api_server . '/restoreLastCart';
+        $endPoints['paypalSetup']               = $p4m_api_server . '/paypalSetup';
+        $endPoints['cart']                      = $p4m_api_server . '/cart';
+        $endPoints['purchase']                  = $p4m_api_server . '/purchase';
+
+        // Global Freight Solutions (GFS) endpoints
+                
+        $endPoints['gfs_connect_token']         = Settings::getPublic('Server:GFS_SERVER') . '/connect/token';
+
+
+        $ep = $endPoints[$endPointStr];
         return $ep . $urlParams;
 
     }

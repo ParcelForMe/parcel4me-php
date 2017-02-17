@@ -10,7 +10,7 @@ It is a reusable un-opinionated interface that can be used with any existing PHP
 
 ## Installation
 
-### Add the package 
+### Add the package ([&nearr;](https://packagist.org/packages/parcel4me/parcel4me))
 
     $ composer require parcel4me/parcel4me
 
@@ -36,7 +36,7 @@ To bring the Parcel4Me functionality into an existing shopping cart 3 steps are 
 
     `require_once __DIR__.'/vendor/autoload.php';`
 
-    and implement the `P4M\P4M_Shop` abstract class, which means coding each of the methods listed in [p4m-shop-interface](p4m-shop-interface.php)
+    and implement the `P4M\P4M_Shop` abstract class, which means coding each of the methods listed in `p4m-shop-interface.php`.
 
 2. add the Parcel4Me UI widgets into your shopping cart in the approprate places    
      (in the near future these will be available via a CDN)

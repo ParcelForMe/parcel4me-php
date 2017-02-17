@@ -4,10 +4,12 @@ namespace P4M;
 
 require_once 'HTTP/Request2.php';
 
-require 'p4m-shop-interface.php';
-require 'p4m-urls.php';
-require 'p4m-models.php';
-require 'settings.php';
+require_once 'p4m-shop-interface.php';
+require_once 'p4m-urls.php';
+require_once 'p4m-models.php';
+require_once 'settings.php';
+require_once 'p4m-configure-server-urls.php';
+
 
 define ('SHM_IDENTIFIER', 1);
 define ('SHM_ClientCredentialsToken', 1);
@@ -72,6 +74,36 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     }
 
 
+    // Constructor
+    // Pass in associative arry with these properties :
+    //   p4m_client_id, p4m_secret, gfs_client_id, gfs_secret, 
+    //   redirect_url_checkout, redirect_url_payment_complete,
+    //   environment
+    public function __construct( $settings = null) {
+
+        if ( null == $settings )                                                throw new \Exception("No settings parameter passed to P4M_Shop constructor");
+        if (!array_key_exists( 'p4m_client_id', $settings ))                    throw new \Exception("p4m_client_id setting not found");
+        if (!array_key_exists( 'p4m_secret', $settings ))                       throw new \Exception("p4m_secret setting not found");
+        if (!array_key_exists( 'gfs_client_id', $settings ))                    throw new \Exception("gfs_client_id setting not found");
+        if (!array_key_exists( 'gfs_secret', $settings ))                       throw new \Exception("gfs_secret setting not found");
+        if (!array_key_exists( 'redirect_url_checkout', $settings ))            throw new \Exception("redirect_url_checkout setting not found");
+        if (!array_key_exists( 'redirect_url_payment_complete', $settings ))    throw new \Exception("redirect_url_payment_complete setting not found");
+        if (!array_key_exists( 'environment', $settings ))                      throw new \Exception("environment setting not found");
+
+        $site_base_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . "{$_SERVER['HTTP_HOST']}/";
+
+        Settings::setPublic( 'OpenIdConnect:ClientId',     $settings['p4m_client_id'] );
+        Settings::setPublic( 'OpenIdConnect:ClientSecret', $settings['p4m_secret'] );
+        Settings::setPublic( 'OpenIdConnect:RedirectUrl',  $site_base_url.'p4m/getP4MAccessToken' );
+        Settings::setPublic( 'GFS:ClientId',               $settings['gfs_client_id'] );
+        Settings::setPublic( 'GFS:ClientSecret',           $settings['gfs_secret'] );
+        Settings::setPublic( 'Environment',                $settings['environment'] );
+        Settings::setPublic( 'RedirectUrl:Checkout',       $settings['redirect_url_checkout'] );
+        Settings::setPublic( 'RedirectURl:PaymentDone',    $settings['redirect_url_payment_complete'] );
+    
+        configure_server_urls ( Settings::getPublic( 'Environment' ) );
+
+    } 
 
 
     // Internal Class Functions : 
@@ -193,8 +225,8 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         if (!$clientCredentials) {
 
             $oidc = new \OpenIDConnectClient(P4M_Shop_Urls::endPoint('oauth2_base_url'),
-                                             Settings::getPublic('OpenIdConnect:ClientId'),
-                                             Settings::getPublic('OpenIdConnect:ClientSecret') );
+                                             ('OpenIdConnect:ClientId'),
+                                             ('OpenIdConnect:ClientSecret') );
             $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('connect_token')));
             $oidc->addScope('p4mRetail');
             $oidc->addScope('p4mApi');
@@ -273,7 +305,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                                             Settings::getPublic('OpenIdConnect:ClientSecret') );
             $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('connect_token')));
             $oidc->providerConfigParam(array('jwks_uri'=>P4M_Shop_Urls::endPoint('jwks')));
-            $oidc->setProviderURL(P4M_OID_SERVER);
+            $oidc->setProviderURL(Settings::getPublic( 'Server:P4M_OID_SERVER' ));
         
             $response = $oidc->authenticate();
 
@@ -467,9 +499,9 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         if ( (!array_key_exists('gfsCheckoutToken', $_COOKIE)) || ($_COOKIE['gfsCheckoutToken']=='') ) {
 
             try {
-                $oidc = new \OpenIDConnectClient(GFS_SERVER,
-                                                Settings::getPublic('GFS:ClientId'),
-                                                Settings::getPublic('GFS:ClientSecret') );
+                $oidc = new \OpenIDConnectClient(Settings::getPublic('Server:GFS_SERVER'),
+                                                 Settings::getPublic('GFS:ClientId'),
+                                                 Settings::getPublic('GFS:ClientSecret') );
                 $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('gfs_connect_token')));
                 $oidc->addScope('read');
                 $oidc->addScope('checkout-api');
@@ -700,7 +732,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
                     $this->completePurchase( $rob->Cart, $rob->Id, $rob->TransactionTypeCode, $rob->AuthCode );
 
-                    $resultObject->RedirectUrl = $this->PAYMENT_COMPLETE_URL;
+                    $resultObject->RedirectUrl = Settings::setPublic( 'RedirectURl:PaymentDone' );
                 
                 } else {
 
