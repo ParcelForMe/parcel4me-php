@@ -30,14 +30,13 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     abstract public function getCartOfCurrentUser();
     abstract public function setCartOfCurrentUser( $p4m_cart );
     abstract public function setAddressOfCurrentUser( $which_address, $p4m_address );
-    abstract public function getCheckoutPageHtml( $replacementParams );
     abstract public function updateShipping( $shippingServiceName, $amount, $dueDate );
     abstract public function getCartTotals();
     abstract public function updateWithDiscountCode( $discountCode );
     abstract public function updateRemoveDiscountCode( $discountCode );
     abstract public function updateCartItemQuantities( $itemsUpdateArray );
     abstract public function completePurchase ( $p4m_cart, $transactionId, $transationTypeCode, $authCode );
-    abstract public function localErrorPageUrl( $message );
+    abstract public function handleError( $message );
 
 
 
@@ -56,8 +55,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
     public function somethingWentWrong($message) {
         error_log("somethingWentWrong(" . $message . ") ". $this->localErrorPageUrl($message));
-        header("Location: ".$this->localErrorPageUrl($message)); 
-        exit();  
+        $this->handleError($message);  
     }
 
 
@@ -79,6 +77,8 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     //   p4m_client_id, p4m_secret, gfs_client_id, gfs_secret, 
     //   redirect_url_checkout, redirect_url_payment_complete,
     //   environment
+
+
     public function __construct( $settings = null) {
 
         if ( null == $settings )                                                throw new \Exception("No settings parameter passed to P4M_Shop constructor");
@@ -100,8 +100,9 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         Settings::setPublic( 'Environment',                $settings['environment'] );
         Settings::setPublic( 'RedirectUrl:Checkout',       $settings['redirect_url_checkout'] );
         Settings::setPublic( 'RedirectURl:PaymentDone',    $settings['redirect_url_payment_complete'] );
-    
+
         configure_server_urls ( Settings::getPublic( 'Environment' ) );
+
 
     } 
 
@@ -535,17 +536,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         }
 
-        $checkoutConfig = array (
-            'sessionId'           => $this->getCurrentSessionId(),
-            'gfsAccessToken'      => (array_key_exists('gfsCheckoutToken', $_COOKIE) ? $_COOKIE['gfsCheckoutToken'] : ''),
-            'initialAddress'      => (array_key_exists('p4mInitialAddress', $_COOKIE) ? $_COOKIE['p4mInitialAddress'] : ''),
-            'initialPostCode'     => (array_key_exists('p4mDefaultPostCode', $_COOKIE) ? $_COOKIE['p4mDefaultPostCode'] : ''),
-            'initialCountryCode'  => (array_key_exists('p4mDefaultCountryCode', $_COOKIE) ? $_COOKIE['p4mDefaultCountryCode'] : '')
-        );
-
-        $checkoutHtml = $this->getCheckoutPageHtml( $checkoutConfig );
-
-        echo $checkoutHtml;
+        $this->redirectTo(Settings::getPublic( 'RedirectUrl:Checkout' ));
 
     }
 
@@ -732,7 +723,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
                     $this->completePurchase( $rob->Cart, $rob->Id, $rob->TransactionTypeCode, $rob->AuthCode );
 
-                    $resultObject->RedirectUrl = Settings::setPublic( 'RedirectURl:PaymentDone' );
+                    $resultObject->RedirectUrl = Settings::getPublic( 'RedirectURl:PaymentDone' );
                 
                 } else {
 
@@ -814,7 +805,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
                 $this->completePurchase( $rob->Cart, '3DSecure', '3DSecure', '3DSecure');
                 
-                $this->redirectTo($this->PAYMENT_COMPLETE_URL);
+                $this->redirectTo(Settings::getPublic( 'RedirectURl:PaymentDone' ));
             } else {
                 $this->somethingWentWrong('non-success getting p4m cart after calling purchaseComplete');
             }

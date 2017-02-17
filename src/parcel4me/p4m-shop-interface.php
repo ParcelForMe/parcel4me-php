@@ -65,19 +65,6 @@ interface P4M_Shop_Interface {
 
 
     /**
-        returns the full HTML of the checkout page of the shopping cart application
-
-        These values come into the template :
-        $replacementParams = array (
-                            sessionId       => '',
-                            gfsAccessToken  => ''
-                        );
-
-    */
-    public function getCheckoutPageHtml( $replacementParams );
-
-
-    /**
         update the shipping and tax on the current local cart   
     */
     public function updateShipping( $shippingServiceName, $amount, $dueDate );
@@ -132,10 +119,9 @@ interface P4M_Shop_Interface {
 
 
     /**
-        return a URL to redirect to show the user an error when attempting to register them
-        pass in an error message
+        handle the error - returned as a string
     */
-    public function localErrorPageUrl( $message );
+    public function handleError( $message );
 
 
 }
