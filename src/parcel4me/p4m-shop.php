@@ -493,6 +493,14 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         }
     }
 
+
+    private function createJsCookie($name, $value, $expire) {
+        echo " <script>
+                document.cookie = '{$name}={$value}; expires={$expire}; path=/; domain=.{$_SERVER['HTTP_HOST']}';
+              </script> ";
+    }
+
+
     public function checkout() {
         // http://developer.parcelfor.me/docs/documentation/parcel-for-me-widgets/p4m-checkout-widget/checkout/
 
@@ -532,11 +540,10 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             $accessToken  = $response->access_token;
             $encodeToken = base64_encode($accessToken);
             $cookieExpire = strtotime('+'.$response->expires_in.' seconds');
-            $path         = '/';
-            setcookie( "gfsCheckoutToken",
-                    $encodeToken,
-                    $cookieExpire,
-                    $path );
+            $this->createJsCookie( "gfsCheckoutToken",
+                            $encodeToken,
+                            gmdate( "M d Y H:i:s", $cookieExpire )
+                          );
             $_COOKIE['gfsCheckoutToken'] = $encodeToken;
 
         }
