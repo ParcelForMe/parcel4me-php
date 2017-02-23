@@ -2,8 +2,6 @@
 
 namespace P4M;
 
-require_once 'HTTP/Request2.php';
-
 require_once 'p4m-shop-interface.php';
 require_once 'p4m-urls.php';
 require_once 'p4m-models.php';
@@ -54,7 +52,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
 
     public function somethingWentWrong($message) {
-        error_log("somethingWentWrong(" . $message . ") ". $this->localErrorPageUrl($message));
+        error_log("somethingWentWrong(" . $message . ") ");
         $this->handleError($message);  
     }
 
