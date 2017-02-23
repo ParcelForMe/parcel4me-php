@@ -14,6 +14,8 @@ It is a reusable un-opinionated interface that can be used with any existing PHP
 
     $ composer require parcel4me/parcel4me
 
+*Tested working on PHP version 5.6.7.*
+
 ## Demo Example(s)
 
 *  See the **[basic demo implementation](https://github.com/parcelforme/parcel4me-php-basedemo)**.     
@@ -34,7 +36,8 @@ To bring the Parcel4Me functionality into an existing shopping cart 3 steps are 
 
 1. Require the composer autoloader :
 
-    `require_once __DIR__.'/vendor/autoload.php';`
+	`//require_once __DIR__.'/vendor/autoload.php';`
+	`require_once __DIR__.'/vendor/parcel4me/parcel4me/src/parcel4me/p4m-shop.php';`
 
     and implement the `P4M\P4M_Shop` abstract class, which means coding each of the methods listed in `p4m-shop-interface.php`.
 
@@ -54,7 +57,7 @@ To bring the Parcel4Me functionality into an existing shopping cart 3 steps are 
 > 
 > ##### p4m-checkout Widget
 > 
-> * GET  p4m/checkout
+> * GET  p4m/checkout (or differently named endpoint)
 > * GET  p4m/getP4MCart
 > * POST p4m/updShippingService
 > * GET  p4m/applyDiscountCode
