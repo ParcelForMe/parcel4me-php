@@ -486,6 +486,13 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     }
 
 
+    public function checkoutRedirect() {
+        // check if logged onto parcel for me, if so redirect to redirect_url_checkout, if not do nothing
+        if ($_COOKIE["p4mToken"]) {
+            $this->redirectTo(Settings::getPublic( 'RedirectUrl:Checkout' ));
+        }
+    }
+
     public function checkout() {
         // http://developer.parcelfor.me/docs/documentation/parcel-for-me-widgets/p4m-checkout-widget/checkout/
 
@@ -534,8 +541,15 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         }
 
-        $this->redirectTo(Settings::getPublic( 'RedirectUrl:Checkout' ));
+        /*
 
+            This function has no output !
+
+            In the method that calls this you must
+            now output the checkout widget !
+        
+        */
+        
     }
 
 
