@@ -496,7 +496,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
     private function createJsCookie($name, $value, $expire) {
         echo " <script>
-                document.cookie = '{$name}={$value}; expires={$expire}; path=/; domain=.{$_SERVER['HTTP_HOST']}';
+                document.cookie = '{$name}={$value}; expires={$expire}; path=/;';
               </script> ";
     }
 
@@ -542,7 +542,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             $cookieExpire = strtotime('+'.$response->expires_in.' seconds');
             $this->createJsCookie( "gfsCheckoutToken",
                             $encodeToken,
-                            gmdate( "M d Y H:i:s", $cookieExpire )
+                            gmdate( "D, d M Y H:i:s T", $cookieExpire )
                           );
             $_COOKIE['gfsCheckoutToken'] = $encodeToken;
 
