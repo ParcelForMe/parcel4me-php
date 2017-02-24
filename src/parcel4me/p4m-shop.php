@@ -21,6 +21,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
     abstract public function userIsLoggedIn();
     abstract public function createNewUser( $p4m_consumer );
+    abstract public function isValidUserId( $localUserId );
     abstract public function loginUser( $localUserId );
     abstract public function logoutCurrentUser();
     abstract public function getCurrentUserDetails();
@@ -395,7 +396,8 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                      Local User	    P4M User	                Action
                 1	 Not logged in	Has no local Id 	        Create and login a new local user using the P4M details
                                                                 Store the local Id in P4M Consumer.Extras["LocalId"]
-                2	 Not logged in	Has a local Id 	            Login using the P4M local Id, update local details 
+                2a	 Not logged in	Has a VALID local Id 	    Login using the P4M local Id, update local details 
+                2b   Not logged in and id is invalid            Create user and login 
                 3	 Logged in	    Has no local Id 	        Logout current user, proceed for 1
                 4	 Logged in	    Has a different local Id 	Logout current user, proceed for 2 
                 5	 Logged in	    Has matching local Id 	    Update local details from P4M if required 
@@ -405,14 +407,21 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             $loggedInUser = $this->userIsLoggedIn();
             if (!$loggedInUser) {
 
-                if (!$hasLocalId) {
-                    // case 1 
-                    $extraDetails = $this->createNewUser($consumer); 
-                    if (!isset($extraDetails->id)) throw new \Exception('No "id" field on local user');
+                if ( (!$hasLocalId) || (!$this->isValidUserId($consumer->Extras->LocalId)) ) {
+
+                    // case 1 OR case 2b
+                    $extraDetails = $this->createNewUser( $consumer ); 
+                    if ( !isset($extraDetails->id) ) throw new \Exception('No "id" field on local user');
                     $extraDetails->LocalId = $extraDetails->id;
                     $rob = $this->apiHttp('POST',  P4M_Shop_Urls::endPoint('consumerExtras'),  $extraDetails);
+
+                    if ( !$rob->success ) {
+                        handleError( $rob->Error );
+                    }
+        
+                    $this->loginUser( $extraDetails->id );
                 } else {
-                    // case 2 
+                    // case 2a
                     $this->loginUser( $consumer->Extras->LocalId );
                 }
 
