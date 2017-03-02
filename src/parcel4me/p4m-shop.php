@@ -153,6 +153,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             )
         ));
 
+
         $response = curl_exec($curl);
         $err  = curl_error($curl);
         $info = curl_getinfo($curl);
@@ -189,7 +190,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         // do a http request, but for any error use the "somethingWentWrong" method 
 
         try {
-            $result = $this->apiHttp_withoutErrorHandler($method, $endpoint, $data = null);
+            $result = $this->apiHttp_withoutErrorHandler($method, $endpoint, $data);
         } catch (\Exception $e) {
             $result = $this->somethingWentWrong($e);
         }
@@ -372,7 +373,11 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         // Send the API request 
         $this->setBearerToken($_COOKIE["p4mToken"]);
-        $rob = $this->apiHttp('GET',  P4M_Shop_Urls::endPoint('consumer'));
+        try {
+            $rob = $this->apiHttp_withoutErrorHandler('GET',  P4M_Shop_Urls::endPoint('consumer'));
+        } catch ( \Exception $e ) {
+            $this->returnJsonError( $e->getMessage() );
+        }
 
         if (!$rob->Success) {
             echo '{ "Success": false, "Error": "Unsuccessful fetching consumer ('.$rob->Error.')" }';
@@ -426,23 +431,16 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                         
                     if ( !$localUser ) $this->returnJsonError("Failed to create new local user");
                     if ( !isset($localUser->id) ) $this->returnJsonError('No "id" field on local user');
-                    $setExtra = new \stdClass();
-                    $setExtra->LocalId = $localUser->id;
 
-                    $rob = $this->apiHttp('POST',  P4M_Shop_Urls::endPoint('consumerExtras'),  $setExtra);
+                    try {
+                        $setExtra = json_encode( array('LocalId' => $localUser->id) );
+                        $rob = $this->apiHttp_withoutErrorHandler('POST',  P4M_Shop_Urls::endPoint('consumerExtras'), $setExtra);
+                    } catch (\Exception $e) {
+                        $this->returnJsonError( $e->getMessage()) ;
+                    }
 
-                    /* DEBUG CODE 
-                    echo '--HERE--';
-                    var_dump($rob);
-                    echo ' -- ';
-                    echo P4M_Shop_Urls::endPoint('consumerExtras');
-                    echo ' -- ';
-                    var_dump($setExtra);
-                    die();
-                    */
-                    
-                    if ( !$rob->success ) $this->returnJsonError( $rob->Error );
-        
+                    if ( !$rob->Success ) $this->returnJsonError( $rob->Error );
+
                     $this->loginUser( $localUser->id );
                 } else {
                     // case 2a
@@ -454,10 +452,16 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                 if (!$hasLocalId) {
                     // case 3
                     $this->logoutCurrentUser();
-                    $extraDetails = $this->createNewUser($consumer); 
-                    if (!isset($extraDetails->id)) throw new \Exception('No "id" field on local user');
-                    $extraDetails->LocalId = $extraDetails->id;
-                    $rob = $this->apiHttp('POST',  P4M_Shop_Urls::endPoint('consumerExtras'),  $extraDetails);
+                    $localUser = $this->createNewUser($consumer); 
+                    if ( !isset($localUser->id) ) $this->returnJsonError('No "id" field on local user');
+
+                    try {
+                        $setExtra = json_encode( array('LocalId' => $localUser->id) );
+                        $rob = $this->apiHttp_withoutErrorHandler('POST',  P4M_Shop_Urls::endPoint('consumerExtras'), $setExtra);
+                    } catch (\Exception $e) {
+                        $this->returnJsonError($e->getMessage());
+                    }
+
                 } elseif ( (property_exists($consumer, 'Extras')) && 
                            (property_exists($consumer->Extras, 'LocalId')) && 
                            (is_object($loggedInUser)) &&
