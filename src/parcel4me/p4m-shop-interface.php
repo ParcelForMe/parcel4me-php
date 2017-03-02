@@ -12,8 +12,22 @@ interface P4M_Shop_Interface {
 
     /**
         create a new local user in the shopping cart DB and return the new local user object, else throw error
+        (it is expected that the new user id will be on the returned object as ->id)
     */
     public function createNewUser( $p4m_consumer );
+
+
+    /**
+        return true if it is a valid user id and false if not 
+    */
+    public function isValidUserId( $localUserId );
+
+
+    /**
+        return local user record if found with this email address 
+        else return false 
+    */
+    public function fetchLocalUserByEmail( $localUserEmailAddress );
 
 
     /**

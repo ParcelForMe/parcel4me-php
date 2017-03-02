@@ -22,6 +22,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     abstract public function userIsLoggedIn();
     abstract public function createNewUser( $p4m_consumer );
     abstract public function isValidUserId( $localUserId );
+    abstract public function fetchLocalUserByEmail( $localUserEmailAddress );
     abstract public function loginUser( $localUserId );
     abstract public function logoutCurrentUser();
     abstract public function getCurrentUserDetails();
@@ -118,6 +119,11 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     private $bearerToken;
     private function setBearerToken($token) {
         $this->bearerToken = $token;
+    }
+
+    private function returnJsonError($message) {
+        echo '{"Success": false, "Error": "'.$message.'" }';
+        exit();
     }
 
 
@@ -394,10 +400,14 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             /*
                 Handle these possible scenereos 
                      Local User	    P4M User	                Action
+                     -------------- --------------------------- ----------------------------------------------------
                 1	 Not logged in	Has no local Id 	        Create and login a new local user using the P4M details
                                                                 Store the local Id in P4M Consumer.Extras["LocalId"]
                 2a	 Not logged in	Has a VALID local Id 	    Login using the P4M local Id, update local details 
-                2b   Not logged in and id is invalid            Create user and login 
+                2b   Not logged in  Id is invalid               Check if user exists with that email,
+                                                                    If not : Create user and login 
+                                                                    If so  : Update id that p4m stores for this user 
+                                                                and login 
                 3	 Logged in	    Has no local Id 	        Logout current user, proceed for 1
                 4	 Logged in	    Has a different local Id 	Logout current user, proceed for 2 
                 5	 Logged in	    Has matching local Id 	    Update local details from P4M if required 
@@ -408,18 +418,32 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             if (!$loggedInUser) {
 
                 if ( (!$hasLocalId) || (!$this->isValidUserId($consumer->Extras->LocalId)) ) {
-
                     // case 1 OR case 2b
-                    $extraDetails = $this->createNewUser( $consumer ); 
-                    if ( !isset($extraDetails->id) ) throw new \Exception('No "id" field on local user');
-                    $extraDetails->LocalId = $extraDetails->id;
-                    $rob = $this->apiHttp('POST',  P4M_Shop_Urls::endPoint('consumerExtras'),  $extraDetails);
 
-                    if ( !$rob->success ) {
-                        handleError( $rob->Error );
-                    }
+                    $localUser = $this->fetchLocalUserByEmail( $consumer->Email );
+                    
+                    if ( !$localUser ) $localUser = $this->createNewUser( $consumer ); 
+                        
+                    if ( !$localUser ) $this->returnJsonError("Failed to create new local user");
+                    if ( !isset($localUser->id) ) $this->returnJsonError('No "id" field on local user');
+                    $setExtra = new \stdClass();
+                    $setExtra->LocalId = $localUser->id;
+
+                    $rob = $this->apiHttp('POST',  P4M_Shop_Urls::endPoint('consumerExtras'),  $setExtra);
+
+                    /* DEBUG CODE 
+                    echo '--HERE--';
+                    var_dump($rob);
+                    echo ' -- ';
+                    echo P4M_Shop_Urls::endPoint('consumerExtras');
+                    echo ' -- ';
+                    var_dump($setExtra);
+                    die();
+                    */
+                    
+                    if ( !$rob->success ) $this->returnJsonError( $rob->Error );
         
-                    $this->loginUser( $extraDetails->id );
+                    $this->loginUser( $localUser->id );
                 } else {
                     // case 2a
                     $this->loginUser( $consumer->Extras->LocalId );
