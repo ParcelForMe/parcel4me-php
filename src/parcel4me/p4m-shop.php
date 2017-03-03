@@ -773,7 +773,6 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                 
                 if ( (!property_exists($rob, 'ACSUrl')) || (!$rob->ACSUrl) ) {
 
-                    if (property_exists($rob, 'Cart') && $rob->Cart)            $this->setCartOfCurrentUser($rob->Cart);
                     if (property_exists($rob, 'DeliverTo') && $rob->DeliverTo)  $this->setAddressOfCurrentUser('prefDelivery', $rob->DeliverTo);
                     if (property_exists($rob, 'BillTo') && $rob->BillTo)        $this->setAddressOfCurrentUser('billing',      $rob->BillTo);
 
@@ -855,7 +854,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             );
 
             if ($rob->Success) {
-                if (property_exists($rob, 'Cart') && $rob->Cart)            $this->setCartOfCurrentUser($rob->Cart);
+
                 if (property_exists($rob, 'DeliverTo') && $rob->DeliverTo)  $this->setAddressOfCurrentUser('prefDelivery', $rob->DeliverTo);
                 if (property_exists($rob, 'BillTo') && $rob->BillTo)        $this->setAddressOfCurrentUser('billing',      $rob->BillTo);
 
