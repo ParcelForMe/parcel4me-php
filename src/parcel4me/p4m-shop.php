@@ -153,6 +153,19 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             )
         ));
 
+        /*
+            This logic and the associated .pem file are to fix a cRUL error that occurs 
+            when logging on in an Azure website :
+                "SSL certificate problem: unable to get local issuer certificate"
+            The solution is described here : 
+                https://blogs.msdn.microsoft.com/azureossds/2015/06/12/verify-peer-certificate-from-php-curl-for-azure-apps/
+                (which includes the link to http://curl.haxx.se/docs/caextract.html)
+        */
+        // TODO : mozilla suggests updating when changed, need to do this somewhere ! :  curl --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem
+        curl_setopt($curl, CURLOPT_CAINFO, dirname(__FILE__) . "/cert/cacert.pem");
+
+
+
 
         $response = curl_exec($curl);
         $err  = curl_error($curl);
