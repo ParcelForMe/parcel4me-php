@@ -336,6 +336,8 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             $oidc->providerConfigParam(array('jwks_uri'=>P4M_Shop_Urls::endPoint('jwks')));
             $oidc->setProviderURL(Settings::getPublic( 'Server:P4M_OID_SERVER' ));
         
+            $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" ); 
+            
             $response = $oidc->authenticate();
 
             if (!$response) {
