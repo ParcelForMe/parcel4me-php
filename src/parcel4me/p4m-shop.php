@@ -260,6 +260,8 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             $oidc->addScope('p4mRetail');
             $oidc->addScope('p4mApi');
 
+            $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" );  
+            
             $clientCredentials = $oidc->requestClientCredentialsToken();
 
 
@@ -337,7 +339,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             $oidc->setProviderURL(Settings::getPublic( 'Server:P4M_OID_SERVER' ));
         
             $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" ); 
-            
+
             $response = $oidc->authenticate();
 
             if (!$response) {
@@ -580,6 +582,8 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                 $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('gfs_connect_token')));
                 $oidc->addScope('read');
                 $oidc->addScope('checkout-api');
+
+                $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" ); 
 
                 $response = $oidc->requestClientCredentialsToken();
 
