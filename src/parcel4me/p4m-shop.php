@@ -163,7 +163,16 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         */
         // TODO : mozilla suggests updating when changed, need to do this somewhere ! :  curl --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem
         curl_setopt($curl, CURLOPT_CAINFO, dirname(__FILE__) . "/cert/cacert.pem");
-
+/* a possible 'nother option :
+        $NOT_YET_IMPLEMENTED_use_ssl_cert_verify_peer = false;
+        if ( $NOT_YET_IMPLEMENTED_use_ssl_cert_verify_peer ) {
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+            curl_setopt($curl, CURLOPT_CAINFO, $TO_BE_DEFINED_certPath);
+        } else {
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        }
+*/
 
 
 
