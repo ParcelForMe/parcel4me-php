@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "45a39d6f6a4955c1a57c6f55c804f26d",
+    "content-hash": "febe500d9801af1a581b1891bbdfbbcb",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -51,22 +51,22 @@
         },
         {
             "name": "krisrandall/openid-connect-with-client-credentials-php",
-            "version": "0.3.0",
+            "version": "0.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/krisrandall/OpenID-Connect-PHP.git",
-                "reference": "d3f6dcddb609a54e569b11f695f25dd0cc8a38cd"
+                "reference": "791a729e0ad9eec340ad42f8af63d0c432a8b488"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/krisrandall/OpenID-Connect-PHP/zipball/d3f6dcddb609a54e569b11f695f25dd0cc8a38cd",
-                "reference": "d3f6dcddb609a54e569b11f695f25dd0cc8a38cd",
+                "url": "https://api.github.com/repos/krisrandall/OpenID-Connect-PHP/zipball/791a729e0ad9eec340ad42f8af63d0c432a8b488",
+                "reference": "791a729e0ad9eec340ad42f8af63d0c432a8b488",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "ext-json": "*",
-                "php": ">=5.2",
+                "php": ">=5.4",
                 "phpseclib/phpseclib": "2.0.1"
             },
             "type": "library",
@@ -77,7 +77,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "description": "Bare-bones OpenID Connect client",
-            "time": "2017-01-09T23:50:39+00:00"
+            "time": "2017-03-10T04:27:01+00:00"
         },
         {
             "name": "phpseclib/phpseclib",
