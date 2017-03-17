@@ -8,6 +8,22 @@ This package adds global one-click checkout and delivery to a PHP shopping cart 
 It is a reusable un-opinionated interface that can be used with any existing PHP shopping cart.    
 
 
+
+## Existing Implementations
+
+These working implementations demonstrate how this Parcel For Me package can be used to intergrate Parcel For Me into an existing PHP Shopping Cart.
+
+* **Bare-bones demo implementation**  
+  [https://github.com/ParcelForMe/parcel4me-php-basedemo](https://github.com/ParcelForMe/parcel4me-php-basedemo)    
+
+* **Wordpress Plugin "ParcelForMe for WooCommerce"**    
+  [https://github.com/ParcelForMe/parcel4me-php-woocommerce](https://github.com/ParcelForMe/parcel4me-php-woocommerce)
+
+* **Magento Plugin**    
+  [https://github.com/ParcelForMe/parcel4me-php-magento](https://github.com/ParcelForMe/parcel4me-php-magento)
+  
+
+
 ## Installation
 
 ### Add the package ([&nearr;](https://packagist.org/packages/parcel4me/parcel4me))
@@ -16,15 +32,6 @@ It is a reusable un-opinionated interface that can be used with any existing PHP
 
 *Tested working on PHP version 5.6.7.*
 
-## Demo Example(s)
-
-*  See the **[basic demo implementation](https://github.com/parcelforme/parcel4me-php-basedemo)**.     
-
-* See the ** **COMING SOON** ** : [list of p4m shopping cart implementations]().
-
-
-
---------
 
 
 ## Usage (how to modify an existing PHP shopping cart)
