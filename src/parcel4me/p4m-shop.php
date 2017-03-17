@@ -901,6 +901,64 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
     
 
+    
+    public function testOidcConnection( $which, $clientId, $clientSecret ) {
+        // This method is for testing if an OIDC connection is successful or not,
+        // The first parameter should be 'p4m' or 'gfs',
+        // Return "success" or a string describing the problem
+        $success_value = "success";
+
+        if ('p4m'==$which) {
+
+            try { // as per call in getP4MAccessToken() 
+
+                $oidc = new \OpenIDConnectClient(P4M_Shop_Urls::endPoint('oauth2_base_url'),
+                                                 $clientId,
+                                                 $clientSecret);
+                $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('connect_token')));
+                $oidc->addScope('p4mRetail');
+                $oidc->addScope('p4mApi');
+
+                $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" ); 
+   
+                $response = $oidc->requestClientCredentialsToken();
+
+                if ( (!$response) || (!is_object($response)) || (!property_exists($response, 'access_token')) ) {
+                    return "Problem: ".(json_encode($response));
+                } else {
+                    return $success_value;
+                }
+            } catch (\Exception $e) {
+                return "Problem:: ".$e->getMessage();
+            }
+
+        } else if ('gfs'==$which) {
+
+            try { // as per call in checkout()
+                $oidc = new \OpenIDConnectClient(Settings::getPublic('Server:GFS_SERVER'),
+                                                $clientId,
+                                                $clientSecret);
+                $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('gfs_connect_token')));
+                $oidc->addScope('read');
+                $oidc->addScope('checkout-api');
+                $response = $oidc->requestClientCredentialsToken();
+
+                if ( (!$response) || (!is_object($response)) || (!property_exists($response, 'access_token')) ) {
+                    return "Problem: ".(json_encode($response));
+                } else {
+                    return $success_value;
+                }
+            } catch (\Exception $e) {
+                return "Problem:: ".$e->getMessage();
+            }
+
+        } else {
+            return 'Invalid which OIDC : '.$which;
+        }
+
+    }
+
+
 }
 
 
