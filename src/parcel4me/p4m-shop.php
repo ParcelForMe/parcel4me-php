@@ -9,10 +9,6 @@ require_once 'settings.php';
 require_once 'p4m-configure-server-urls.php';
 
 
-define ('SHM_IDENTIFIER', 1);
-define ('SHM_ClientCredentialsToken', 1);
-
-
 abstract class P4M_Shop implements P4M_Shop_Interface
 {
 
@@ -238,45 +234,25 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         // Obtain a credentials token 
 
-        $clientCredentials = false;
+        $oidc = new \OpenIDConnectClient(P4M_Shop_Urls::endPoint('oauth2_base_url'),
+                                            ('OpenIdConnect:ClientId'),
+                                            ('OpenIdConnect:ClientSecret') );
+        $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('connect_token')));
+        $oidc->addScope('p4mRetail');
+        $oidc->addScope('p4mApi');
 
-        // TODO - check for existing token ! (see TODO a few lines down also ..)
-        shm_remove(\shm_attach(SHM_IDENTIFIER)); // Until we code it to expire the token, request a new one every time !
+        $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" );  
+        
+        $clientCredentials = $oidc->requestClientCredentialsToken();
 
-        // do we have a stored client ?
-        if (\shm_has_var(\shm_attach(SHM_IDENTIFIER), SHM_ClientCredentialsToken)) {
-            // is it about to expire ?
-            /* TODO - check expiry of token "expires_in" .. but need to also save token fetched time */
-            $clientCredentials = \shm_get_var(\shm_attach(SHM_IDENTIFIER), SHM_ClientCredentialsToken);
+
+        // check that it has the properties "access_token" and "token_type"
+        if ( (!property_exists($clientCredentials, 'token_type')) ||
+                (!property_exists($clientCredentials, 'access_token')) 
+        ) {
+            $this->somethingWentWrong('Invalid OAUTH2 Client Credentials returned :'.json_encode($clientCredentials));
         }
-   
-
-        if (!$clientCredentials) {
-
-            $oidc = new \OpenIDConnectClient(P4M_Shop_Urls::endPoint('oauth2_base_url'),
-                                             ('OpenIdConnect:ClientId'),
-                                             ('OpenIdConnect:ClientSecret') );
-            $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('connect_token')));
-            $oidc->addScope('p4mRetail');
-            $oidc->addScope('p4mApi');
-
-            $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" );  
-            
-            $clientCredentials = $oidc->requestClientCredentialsToken();
-
-
-            // check that it has the properties "access_token" and "token_type"
-            if ( (!property_exists($clientCredentials, 'token_type')) ||
-                 (!property_exists($clientCredentials, 'access_token')) 
-            ) {
-                $this->somethingWentWrong('Invalid OAUTH2 Client Credentials returned :'.json_encode($clientCredentials));
-            }
-                 
-
-            \shm_put_var(\shm_attach(SHM_IDENTIFIER), SHM_ClientCredentialsToken, $clientCredentials);
-
-        }
-
+        
 
         // Get the data to send to signup this consumer 
         $consumer = $this->getCurrentUserDetails();
