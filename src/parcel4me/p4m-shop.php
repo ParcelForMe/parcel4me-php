@@ -376,7 +376,8 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         // Send the API request 
         $this->setBearerToken($_COOKIE["p4mToken"]);
         try {
-            $rob = $this->apiHttp_withoutErrorHandler('GET',  P4M_Shop_Urls::endPoint('consumer'));
+            $consumerUrlParams = '?checkHasOpenCart=true';
+            $rob = $this->apiHttp_withoutErrorHandler('GET',  P4M_Shop_Urls::endPoint('consumer', $consumerUrlParams));
         } catch ( \Exception $e ) {
             $this->returnJsonError( $e->getMessage() );
         }
