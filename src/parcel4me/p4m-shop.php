@@ -913,6 +913,9 @@ error_log(json_encode($rob));
                 $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('gfs_connect_token')));
                 $oidc->addScope('read');
                 $oidc->addScope('checkout-api');
+
+                $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" ); 
+                
                 $response = $oidc->requestClientCredentialsToken();
 
                 if ( (!$response) || (!is_object($response)) || (!property_exists($response, 'access_token')) ) {
