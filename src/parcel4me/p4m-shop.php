@@ -107,8 +107,14 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
 
     private function redirectTo($pageLocation) {
-        header("Location: {$pageLocation}");
-        exit();
+
+        if (headers_sent()) {
+            echo " <script> window.location = \"$pageLocation\"; </script> ";
+            exit();
+        } else {
+            header("Location: {$pageLocation}");
+            exit();
+        }
     }
 
 
@@ -271,8 +277,8 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
             if ( strpos($rob->Error, "registered")>-1 ) {
 
-error_log('already registered');
-error_log(json_encode($rob));
+                //error_log('already registered');
+                //error_log(json_encode($rob));
 
                 $redirect_url = P4M_Shop_Urls::endPoint('alreadyRegistered', "?firstName=".$rob->consumer->GivenName."&email=".$rob->consumer->Email);
                 $this->redirectTo($redirect_url);
@@ -283,8 +289,9 @@ error_log(json_encode($rob));
             }
 
         } else {
-error_log('else');
-error_log(json_encode($rob));
+
+            //error_log('else');
+            //error_log(json_encode($rob));
 
             $redirect_url = P4M_Shop_Urls::endPoint('registerConsumer', '/'.$rob->ConsumerId);
             $this->redirectTo($redirect_url);
@@ -915,7 +922,7 @@ error_log(json_encode($rob));
                 $oidc->addScope('checkout-api');
 
                 $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" ); 
-                
+
                 $response = $oidc->requestClientCredentialsToken();
 
                 if ( (!$response) || (!is_object($response)) || (!property_exists($response, 'access_token')) ) {
