@@ -159,16 +159,16 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         */
         // TODO : mozilla suggests updating when changed, need to do this somewhere ! :  curl --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem
         curl_setopt($curl, CURLOPT_CAINFO, dirname(__FILE__) . "/cert/cacert.pem");
-/* a possible 'nother option :
-        $NOT_YET_IMPLEMENTED_use_ssl_cert_verify_peer = false;
-        if ( $NOT_YET_IMPLEMENTED_use_ssl_cert_verify_peer ) {
-            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
-            curl_setopt($curl, CURLOPT_CAINFO, $TO_BE_DEFINED_certPath);
-        } else {
-            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-        }
-*/
+        /* a possible 'nother option :
+                $NOT_YET_IMPLEMENTED_use_ssl_cert_verify_peer = false;
+                if ( $NOT_YET_IMPLEMENTED_use_ssl_cert_verify_peer ) {
+                    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
+                    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+                    curl_setopt($curl, CURLOPT_CAINFO, $TO_BE_DEFINED_certPath);
+                } else {
+                    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+                }
+        */
 
 
 
@@ -269,32 +269,27 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         if (!$rob->Success) {
 
-            /*
-            TODO :
+            if ( strpos($rob->Error, "registered")>-1 ) {
 
-            if (registerResult.Error.Contains("registered"))
-                redirectUrl = idSrvUiUrl+"alreadyRegistered?firstName={consumer.GivenName}&email={consumer.Email}"
-                Redirect(redirectUrl)
-            else
+error_log('already registered');
+error_log(json_encode($rob));
 
-            */
+                $redirect_url = P4M_Shop_Urls::endPoint('alreadyRegistered', "?firstName=".$rob->consumer->GivenName."&email=".$rob->consumer->Email);
+                $this->redirectTo($redirect_url);
 
-            $this->somethingWentWrong("Error registering with P4M : " . $rob->Error);
+
+            } else {
+                $this->somethingWentWrong("Error registering with P4M : " . $rob->Error);
+            }
 
         } else {
+error_log('else');
+error_log(json_encode($rob));
 
-            echo "HOORAY!!";
-            echo $response;
+            $redirect_url = P4M_Shop_Urls::endPoint('registerConsumer', '/'.$rob->ConsumerId);
+            $this->redirectTo($redirect_url);
 
-            /*
-            TODO :
-
-                redirectUrl = idSrvUiUrl+"registerConsumer/{registerResult.ConsumerId}"
-                Redirect(redirectUrl)
-
-            */
-
-            }
+        }
 
     }
 
