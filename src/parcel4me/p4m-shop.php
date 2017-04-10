@@ -9,6 +9,9 @@ require_once 'settings.php';
 require_once 'p4m-configure-server-urls.php';
 
 
+const DEBUG_SHOW_ALL_API_CALLS = true;
+
+
 abstract class P4M_Shop implements P4M_Shop_Interface
 {
 
@@ -25,13 +28,12 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     abstract public function setCurrentUserDetails( $p4m_consumer );
     abstract public function getCartOfCurrentUser();
     abstract public function setCartOfCurrentUser( $p4m_cart );
-    abstract public function setAddressOfCurrentUser( $which_address, $p4m_address );
     abstract public function updateShipping( $shippingServiceName, $amount, $dueDate );
     abstract public function getCartTotals();
     abstract public function updateWithDiscountCode( $discountCode );
     abstract public function updateRemoveDiscountCode( $discountCode );
     abstract public function updateCartItemQuantities( $itemsUpdateArray );
-    abstract public function completePurchase ( $p4m_cart, $transactionId, $transationTypeCode, $authCode );
+    abstract public function completePurchase ( $purchase_data );
     abstract public function handleError( $message );
 
 
@@ -65,6 +67,45 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         // close this popped up window
         echo '<script>window.close();</script>';
+    }
+
+
+    public function processPaymentRefund( $transactionId, $amount ) {
+
+        // Obtain a credentials token 
+        $oidc = new \OpenIDConnectClient( P4M_Shop_Urls::endPoint('oauth2_base_url'),
+                                          Settings::getPublic('OpenIdConnect:ClientId'),
+                                          Settings::getPublic('OpenIdConnect:ClientSecret') );
+        $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('connect_token')));
+        $oidc->addScope('p4mRetail');
+        $oidc->addScope('p4mApi');
+
+        $oidc->setCertPath( dirname(__FILE__) . "/cert/cacert.pem" );  
+        
+        $clientCredentials = $oidc->requestClientCredentialsToken();
+
+        // check that it has the properties "access_token" and "token_type"
+        if ( (!property_exists($clientCredentials, 'token_type')) ||
+                (!property_exists($clientCredentials, 'access_token')) 
+        ) {
+            $this->somethingWentWrong('Invalid OAUTH2 Client Credentials returned :'.json_encode($clientCredentials));
+        }
+
+        $this->setBearerToken($clientCredentials->access_token);
+        $rob = $this->apiHttp( 'POST',  P4M_Shop_Urls::endPoint('refund', '/'.$transactionId.'/'.$amount ));
+
+        // returns true or an error message
+        if ($rob->Success) {
+            return true;
+        } else {
+            return $rob->Error;
+        } 
+
+    }
+
+
+    public function reverseTransaction( $transactionId ) {
+
     }
 
 
@@ -176,11 +217,22 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                 }
         */
 
+        if ( DEBUG_SHOW_ALL_API_CALLS ) {
+            error_log( '* REQUEST * -> '.$method . ' ' . $endpoint );
+            error_log( json_encode($data) );
+        }
 
 
         $response = curl_exec($curl);
         $err  = curl_error($curl);
         $info = curl_getinfo($curl);
+
+
+        if ( DEBUG_SHOW_ALL_API_CALLS ) {
+            error_log( '* RESPONSE * -> '.json_encode($response) );
+            error_log( '* err * -> '.json_encode($err) );
+            error_log( '* info * -> '.json_encode($info) );
+        }
 
         curl_close($curl);
 
@@ -240,9 +292,9 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         // Obtain a credentials token 
 
-        $oidc = new \OpenIDConnectClient(P4M_Shop_Urls::endPoint('oauth2_base_url'),
-                                            ('OpenIdConnect:ClientId'),
-                                            ('OpenIdConnect:ClientSecret') );
+        $oidc = new \OpenIDConnectClient( P4M_Shop_Urls::endPoint('oauth2_base_url'),
+                                          Settings::getPublic('OpenIdConnect:ClientId'),
+                                          Settings::getPublic('OpenIdConnect:ClientSecret') );
         $oidc->providerConfigParam(array('token_endpoint'=>P4M_Shop_Urls::endPoint('connect_token')));
         $oidc->addScope('p4mRetail');
         $oidc->addScope('p4mApi');
@@ -277,21 +329,14 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
             if ( strpos($rob->Error, "registered")>-1 ) {
 
-                //error_log('already registered');
-                //error_log(json_encode($rob));
-
                 $redirect_url = P4M_Shop_Urls::endPoint('alreadyRegistered', "?firstName=".$rob->consumer->GivenName."&email=".$rob->consumer->Email);
                 $this->redirectTo($redirect_url);
-
 
             } else {
                 $this->somethingWentWrong("Error registering with P4M : " . $rob->Error);
             }
 
         } else {
-
-            //error_log('else');
-            //error_log(json_encode($rob));
 
             $redirect_url = P4M_Shop_Urls::endPoint('registerConsumer', '/'.$rob->ConsumerId);
             $this->redirectTo($redirect_url);
@@ -338,7 +383,6 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                    $accessToken,
                    $cookieExpire,
                    $path );
-
             
         // close this popped up window
         echo '<script>window.close();</script>';
@@ -351,18 +395,12 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         if ($this->userIsLoggedIn()) {
             
-            setcookie( "p4mLocalLogin",
-                       true,
-                       0,
-                       '/' );
+            setcookie( "p4mLocalLogin", true, 0, '/' );
             echo '{ "Success": true, "Error": null }';
 
         } else {
 
-            setcookie( "p4mLocalLogin",
-                       false,
-                       0,
-                       '/' );
+            setcookie( "p4mLocalLogin", false, 0, '/' );
             echo '{ "Success": false, "Error": "Not logged in" }';
 
         }
@@ -780,10 +818,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                 
                 if ( (!property_exists($rob, 'ACSUrl')) || (!$rob->ACSUrl) ) {
 
-                    if (property_exists($rob, 'DeliverTo') && $rob->DeliverTo)  $this->setAddressOfCurrentUser('prefDelivery', $rob->DeliverTo);
-                    if (property_exists($rob, 'BillTo') && $rob->BillTo)        $this->setAddressOfCurrentUser('billing',      $rob->BillTo);
-
-                    $this->completePurchase( $rob->Cart, $rob->Id, $rob->TransactionTypeCode, $rob->AuthCode );
+                    $this->completePurchase( $rob );
 
                     $resultObject->RedirectUrl = Settings::getPublic( 'RedirectURl:PaymentDone' );
                 
@@ -800,7 +835,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
             } catch (\Exception $e) {
                 $resultObject->Success     = false;
                 $resultObject->Error       = $e->getMessage();
-                $resultObject->RedirectUrl = $this->localErrorPageUrl($e->getMessage());
+                error_log('Error in p4m-shop.php purchase() '.$e->getMessage());
             }
 
         }
@@ -862,10 +897,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
             if ($rob->Success) {
 
-                if (property_exists($rob, 'DeliverTo') && $rob->DeliverTo)  $this->setAddressOfCurrentUser('prefDelivery', $rob->DeliverTo);
-                if (property_exists($rob, 'BillTo') && $rob->BillTo)        $this->setAddressOfCurrentUser('billing',      $rob->BillTo);
-
-                $this->completePurchase( $rob->Cart, '3DSecure', '3DSecure', '3DSecure');
+                $this->completePurchase( $rob );
                 
                 $this->redirectTo(Settings::getPublic( 'RedirectURl:PaymentDone' ));
             } else {
@@ -939,6 +971,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         }
 
     }
+
 
 
 }
