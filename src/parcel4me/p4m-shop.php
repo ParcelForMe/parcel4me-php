@@ -9,7 +9,7 @@ require_once 'settings.php';
 require_once 'p4m-configure-server-urls.php';
 
 
-const DEBUG_SHOW_ALL_API_CALLS = true;
+const DEBUG_SHOW_ALL_API_CALLS = false;
 
 
 abstract class P4M_Shop implements P4M_Shop_Interface
@@ -28,7 +28,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     abstract public function setCurrentUserDetails( $p4m_consumer );
     abstract public function getCartOfCurrentUser();
     abstract public function setCartOfCurrentUser( $p4m_cart );
-    abstract public function updateShipping( $shippingServiceName, $amount, $dueDate );
+    abstract public function updateShipping( $shippingServiceName, $amount, $dueDate, $address );
     abstract public function getCartTotals();
     abstract public function updateWithDiscountCode( $discountCode );
     abstract public function updateRemoveDiscountCode( $discountCode );
@@ -70,6 +70,14 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     }
 
 
+
+    // Available public functions 
+
+    public function isLoggedIntoParcel4me() {
+        return ( array_key_exists("p4mToken", $_COOKIE) && $_COOKIE["p4mToken"] );
+    }
+
+
     public function processPaymentRefund( $transactionId, $amount ) {
 
         // Obtain a credentials token 
@@ -105,7 +113,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
 
     public function reverseTransaction( $transactionId ) {
-
+        error_log('reverseTransation() is not currently implemented in p4m-shop.php!');
     }
 
 
@@ -469,11 +477,10 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                     // case 1 OR case 2b
 
                     $localUser = $this->fetchLocalUserByEmail( $consumer->Email );
-                    
                     if ( !$localUser ) $localUser = $this->createNewUser( $consumer ); 
                         
                     if ( !$localUser ) $this->returnJsonError("Failed to create new local user");
-                    if ( !isset($localUser->id) ) $this->returnJsonError('No "id" field on local user');
+                    if ( !isset($localUser->id) ) $this->returnJsonError('No "id" field on local (non logged in) user');
 
                     try {
                         $setExtra = json_encode( array('LocalId' => $localUser->id) );
@@ -495,8 +502,11 @@ abstract class P4M_Shop implements P4M_Shop_Interface
                 if (!$hasLocalId) {
                     // case 3
                     $this->logoutCurrentUser();
-                    $localUser = $this->createNewUser($consumer); 
-                    if ( !isset($localUser->id) ) $this->returnJsonError('No "id" field on local user');
+
+                    $localUser = $this->fetchLocalUserByEmail( $consumer->Email );
+                    if ( !$localUser ) $localUser = $this->createNewUser( $consumer ); 
+
+                    if ( !isset($localUser->id) ) $this->returnJsonError('No "id" field on local (logged in) user');
 
                     try {
                         $setExtra = json_encode( array('LocalId' => $localUser->id) );
@@ -568,7 +578,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
     public function checkoutRedirect() {
         // check if logged onto parcel for me, if so redirect to redirect_url_checkout, if not do nothing
-        if ($_COOKIE["p4mToken"]) {
+        if ( $this->isLoggedIntoParcel4me() ) {
             $this->redirectTo(Settings::getPublic( 'RedirectUrl:Checkout' ));
         }
     }
@@ -662,7 +672,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
     }
 
 
-    public function udpShippingService() {
+    public function updShippingService() {
         // http://developer.parcelfor.me/docs/documentation/parcel-for-me-widgets/p4m-checkout-widget/updshippingservice/
 
         // update the local cart with the new shipping amt
@@ -674,7 +684,7 @@ abstract class P4M_Shop implements P4M_Shop_Interface
         $resultObject = new \stdClass();
 
         try {
-            $this->updateShipping( $postBody->Service, $postBody->Amount, $postBody->DueDate );
+            $this->updateShipping( $postBody->Service, $postBody->Amount, $postBody->DueDate, $postBody->Address );
             $totalsObject = $this->getCartTotals();
 
             $resultObject->Success  = true;
@@ -701,21 +711,30 @@ abstract class P4M_Shop implements P4M_Shop_Interface
 
         $resultObject = new \stdClass();
 
-        try {
-            $discountCodeDetails = $this->updateWithDiscountCode( $postBody->discountCode );
-            $totalsObject = $this->getCartTotals();
+        if ( null == $postBody->discountCode ) {
+            $workaround_err_message = "applyDiscountCode was called with a null discountCode -- this is a widget error and incorrect but we allow it and return Success : true";
+            $resultObject->Success       = true;
+            $resultObject->WidgetMessage = $workaround_err_message;
+            error_log($workaround_err_message);
+        } else {
 
-            $resultObject->Success      = true;
-            $resultObject->Tax          = $totalsObject->Tax;
-            $resultObject->Shipping     = $totalsObject->Shipping;
-            $resultObject->Discount     = $totalsObject->Discount;
-            $resultObject->Total        = $totalsObject->Total;
-            $resultObject->Code         = $discountCodeDetails->Code;
-            $resultObject->Description  = $discountCodeDetails->Description;
-            $resultObject->Amount       = $discountCodeDetails->Amount;
-        } catch (\Exception $e) {
-            $resultObject->Success = false;
-            $resultObject->Error   = $e->getMessage();
+            try {
+                $discountCodeDetails = $this->updateWithDiscountCode( $postBody->discountCode );
+                $totalsObject = $this->getCartTotals();
+
+                $resultObject->Success      = true;
+                $resultObject->Tax          = $totalsObject->Tax;
+                $resultObject->Shipping     = $totalsObject->Shipping;
+                $resultObject->Discount     = $totalsObject->Discount;
+                $resultObject->Total        = $totalsObject->Total;
+                $resultObject->Code         = $discountCodeDetails->Code;
+                $resultObject->Description  = $discountCodeDetails->Description;
+                $resultObject->Amount       = $discountCodeDetails->Amount;
+            } catch (\Exception $e) {
+                $resultObject->Success = false;
+                $resultObject->Error   = $e->getMessage();
+            }
+
         }
 
         $resultJson = json_encode($resultObject, JSON_PRETTY_PRINT);
